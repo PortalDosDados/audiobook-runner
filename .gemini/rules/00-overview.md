@@ -9,26 +9,31 @@
 - **TTS Engine**: edge-tts >= 6.1.12 (vozes neurais gratuitas da Microsoft) [requirements.txt].
 - **Extratores**: pypdf >= 4.2.0 [requirements.txt], ebooklib >= 0.18 [requirements.txt], beautifulsoup4 >= 4.12.0 [requirements.txt].
 - **Áudio / Metadados**: mutagen >= 1.47.0 [requirements.txt].
-- **Testes**: pytest [DIRETRIZ aprovada pelo usuário].
+- **Testes e Qualidade**: pytest >= 8.0.0, black >= 24.0.0 [requirements-dev.txt].
 
 ## Comandos Fundamentais
-- **Instalação**:
+- **Instalação (Desenvolvimento)**:
   ```bash
   python -m venv .venv
   .\.venv\Scripts\Activate.ps1
-  pip install -r requirements.txt
+  pip install -r requirements-dev.txt
   ```
-  *Fonte: [README.md]*
+  *Fonte: [requirements-dev.txt]*
 - **Execução Local**:
   ```bash
   streamlit run app.py
   ```
   *Fonte: [README.md]*
+- **Formatação de Código**:
+  ```bash
+  black .
+  ```
+  *Fonte: [DIRETRIZ aprovada pelo usuário]*
 - **Testes Automatizados**:
   ```bash
   pytest
   ```
-  *Fonte: [DIRETRIZ]*
+  *Fonte: [DIRETRIZ aprovada pelo usuário]*
 
 ## Regras Globais
 - SEMPRE executar a aplicação via `streamlit run app.py` [README.md].

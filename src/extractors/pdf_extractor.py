@@ -2,6 +2,7 @@ import re
 from typing import List, Dict, Any
 from pypdf import PdfReader
 
+
 class PDFExtractor:
     """Extrai texto e capítulos de arquivos PDF com limpeza de artefatos de cabeçalho e rodapé."""
 
@@ -15,16 +16,16 @@ class PDFExtractor:
             return ""
 
         # Junta palavras separadas por hífen no fim da linha (ex: compu-\ntador -> computador)
-        text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', text)
+        text = re.sub(r"(\w+)-\n(\w+)", r"\1\2", text)
 
         # Substitui quebras de linha únicas por espaços, mantendo quebras duplas (parágrafos)
         paragraphs = text.split("\n\n")
         cleaned_paragraphs = []
         for p in paragraphs:
             # Substitui quebras simples por espaço
-            cleaned_p = re.sub(r'\s*\n\s*', ' ', p.strip())
+            cleaned_p = re.sub(r"\s*\n\s*", " ", p.strip())
             # Remove linhas que sejam apenas números (número de página)
-            if re.fullmatch(r'\d+', cleaned_p):
+            if re.fullmatch(r"\d+", cleaned_p):
                 continue
             if cleaned_p:
                 cleaned_paragraphs.append(cleaned_p)
@@ -48,8 +49,8 @@ class PDFExtractor:
 
         # Tentar detectar capítulos por padrões comuns (ex: Capítulo 1, Cap. 2, Chapter 3)
         chapter_regex = re.compile(
-            r'^(?:Cap[íi]tulo|Chapter|Parte|Seção|PARTE|CAPÍTULO)\s+([0-9IVXLCDM]+|[A-Za-z]+)(?::| -|\.|\n|$)',
-            re.IGNORECASE | re.MULTILINE
+            r"^(?:Cap[íi]tulo|Chapter|Parte|Seção|PARTE|CAPÍTULO)\s+([0-9IVXLCDM]+|[A-Za-z]+)(?::| -|\.|\n|$)",
+            re.IGNORECASE | re.MULTILINE,
         )
 
         all_text = ""
@@ -74,12 +75,14 @@ class PDFExtractor:
                 text = "\n".join(chunk.split("\n")[1:]).strip()
 
                 if len(text) > 100:  # Ignora capítulos vazios ou sumários
-                    chapters.append({
-                        "id": len(chapters) + 1,
-                        "title": title,
-                        "text": text,
-                        "word_count": len(text.split())
-                    })
+                    chapters.append(
+                        {
+                            "id": len(chapters) + 1,
+                            "title": title,
+                            "text": text,
+                            "word_count": len(text.split()),
+                        }
+                    )
 
         # Se não encontrou capítulos estruturados ou se o PDF não tiver regex clara:
         if not chapters:
@@ -88,14 +91,16 @@ class PDFExtractor:
             words = all_text.split()
 
             for i in range(0, len(words), words_per_chunk):
-                chunk_words = words[i:i + words_per_chunk]
+                chunk_words = words[i : i + words_per_chunk]
                 text = " ".join(chunk_words)
-                chapters.append({
-                    "id": current_chapter,
-                    "title": f"Parte {current_chapter:02d} (~{len(chunk_words)} palavras)",
-                    "text": text,
-                    "word_count": len(chunk_words)
-                })
+                chapters.append(
+                    {
+                        "id": current_chapter,
+                        "title": f"Parte {current_chapter:02d} (~{len(chunk_words)} palavras)",
+                        "text": text,
+                        "word_count": len(chunk_words),
+                    }
+                )
                 current_chapter += 1
 
         return chapters

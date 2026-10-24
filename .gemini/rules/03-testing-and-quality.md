@@ -2,6 +2,8 @@
 
 ## Framework e Estrutura de Testes
 - **Framework**: `pytest` [DIRETRIZ aprovada pelo usuário].
+- **Formatter**: `black` [DIRETRIZ aprovada pelo usuário].
+- **CI / Automação**: GitHub Actions (`.github/workflows/ci.yml`) [DIRETRIZ].
 - **Diretório de Testes**: `tests/` na raiz do projeto [DIRETRIZ].
 - **Nomenclatura**: Arquivos `test_<modulo>.py` e funções de teste `test_<comportamento>()` [DIRETRIZ].
 
@@ -16,7 +18,7 @@
 
 ## Checklist Obrigatório para Agentes de IA
 Antes de considerar qualquer tarefa ou refatoração concluída, o agente DEVE cumprir:
-1. **Validação de Sintaxe**: Garantir que nenhum arquivo `.py` possui erros de sintaxe (`python -m py_compile <arquivo.py>`) [DIRETRIZ].
+1. **Validação de Sintaxe e Estilo**: Garantir sintaxe válida e formatação com `black --check .` [DIRETRIZ].
 2. **Execução de Testes**: Rodar a suíte com `pytest` e garantir que todos os testes passem [DIRETRIZ].
 3. **Escopo Restrito**: NUNCA alterar arquivos fora do escopo solicitado pelo usuário [DIRETRIZ].
 4. **Dependências**: NUNCA adicionar dependências ao `requirements.txt` sem aprovação prévia do usuário [DIRETRIZ].
