@@ -6,7 +6,7 @@ import streamlit as st
 from src.extractors.pdf_extractor import PDFExtractor
 from src.extractors.epub_extractor import EPUBExtractor
 from src.tts.edge_tts_engine import EdgeTTSEngine, AVAILABLE_VOICES
-from src.audio.audio_manager import AudioManager
+from src.audio.audio_manager import AudioManager, AudioProcessingError
 
 st.set_page_config(
     page_title="Audiobook Runner",
@@ -99,6 +99,7 @@ with st.sidebar:
             os.makedirs("output", exist_ok=True)
         st.session_state.pop("generated_files", None)
         st.session_state.pop("zip_path", None)
+        st.session_state.pop("single_audio_path", None)
         st.success("Pasta de saída limpa com sucesso!")
 
 # ----------------- UPLOAD DE LIVRO -----------------
@@ -186,68 +187,114 @@ if uploaded_file is not None:
             if not selected_chapters:
                 st.warning("Selecione pelo menos um capítulo para converter.")
             else:
-                book_output_dir = os.path.join("output", "audiobooks", clean_book_name)
-                os.makedirs(book_output_dir, exist_ok=True)
+                try:
+                    book_output_dir = os.path.join(
+                        "output", "audiobooks", clean_book_name
+                    )
+                    os.makedirs(book_output_dir, exist_ok=True)
 
-                audio_mgr = AudioManager()
-                engine = EdgeTTSEngine(voice=selected_voice_id, rate=rate_str)
+                    audio_mgr = AudioManager()
+                    engine = EdgeTTSEngine(voice=selected_voice_id, rate=rate_str)
 
-                progress_bar = st.progress(0)
-                status_text = st.empty()
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
 
-                total_sel = len(selected_chapters)
-                generated_files = []
+                    total_sel = len(selected_chapters)
+                    generated_files = []
 
-                for idx, ch in enumerate(selected_chapters):
+                    for idx, ch in enumerate(selected_chapters):
+                        status_text.text(
+                            f"Convertendo capítulo {idx + 1} de {total_sel}: {ch['title']}"
+                        )
+                        sanitized_title = re.sub(r'[\/:*?"<>|]', "", ch["title"])[
+                            :40
+                        ].strip()
+                        filename = f"{ch['id']:02d} - {sanitized_title}.mp3"
+                        out_path = os.path.join(book_output_dir, filename)
+
+                        # Gera o arquivo de áudio
+                        engine.generate_speech_sync(ch["text"], out_path)
+
+                        # Adiciona metadados para players e smartwatches
+                        audio_mgr.tag_mp3(
+                            file_path=out_path,
+                            title=ch["title"],
+                            book_title=clean_book_name,
+                            track_num=ch["id"],
+                            total_tracks=len(chapters),
+                        )
+
+                        generated_files.append((ch["title"], out_path))
+                        progress_bar.progress((idx + 1) / total_sel)
+
+                    # Compila todos os capítulos em um único arquivo de áudio final
                     status_text.text(
-                        f"Convertendo capítulo {idx + 1} de {total_sel}: {ch['title']}"
+                        "Compilando todos os capítulos em um único arquivo de áudio consolidado..."
                     )
-                    sanitized_title = re.sub(r'[\/:*?"<>|]', "", ch["title"])[
-                        :40
-                    ].strip()
-                    filename = f"{ch['id']:02d} - {sanitized_title}.mp3"
-                    out_path = os.path.join(book_output_dir, filename)
-
-                    # Gera o arquivo de áudio
-                    engine.generate_speech_sync(ch["text"], out_path)
-
-                    # Adiciona metadados para players e smartwatches
-                    audio_mgr.tag_mp3(
-                        file_path=out_path,
-                        title=ch["title"],
+                    single_audio_filename = f"{clean_book_name}_completo.mp3"
+                    chapter_paths = [path for _, path in generated_files]
+                    single_audio_path = audio_mgr.combine_audio_files(
+                        file_paths=chapter_paths,
+                        output_filename=single_audio_filename,
+                        title=f"{clean_book_name} (Completo)",
                         book_title=clean_book_name,
-                        track_num=ch["id"],
-                        total_tracks=len(chapters),
                     )
 
-                    generated_files.append((ch["title"], out_path))
-                    progress_bar.progress((idx + 1) / total_sel)
+                    # Cria arquivo ZIP com todos os capítulos individuais
+                    zip_filename = f"{clean_book_name}_audiobook.zip"
+                    zip_path = audio_mgr.create_zip_package(
+                        book_output_dir, zip_filename
+                    )
 
-                status_text.success("🎉 Conversão concluída com sucesso!")
+                    st.session_state.zip_path = zip_path
+                    st.session_state.single_audio_path = single_audio_path
+                    st.session_state.generated_files = generated_files
 
-                # Cria arquivo ZIP com todos os capítulos
-                zip_filename = f"{clean_book_name}_audiobook.zip"
-                zip_path = audio_mgr.create_zip_package(book_output_dir, zip_filename)
-
-                st.session_state.zip_path = zip_path
-                st.session_state.generated_files = generated_files
+                    status_text.success(
+                        "🎉 Conversão e compilação concluídas com sucesso!"
+                    )
+                except AudioProcessingError as err:
+                    st.error(f"Erro no processamento de áudio: {err}")
+                except Exception as err:
+                    st.error(f"Ocorreu um erro inesperado durante a conversão: {err}")
 
         # Se já tiver gerado os áudios
         if "generated_files" in st.session_state and st.session_state.generated_files:
             st.markdown("---")
             st.subheader("🎧 Seus Arquivos de Áudio Estão Prontos!")
 
+            # Destaque para o Audiobook Completo (Arquivo Único)
+            if "single_audio_path" in st.session_state and os.path.exists(
+                st.session_state.single_audio_path
+            ):
+                st.markdown("### 🏆 Audiobook Completo (Arquivo Único)")
+                st.caption(
+                    "Todos os capítulos compilados em uma única faixa contínua — ideal para treinos longos e corridas sem interrupções."
+                )
+                st.audio(st.session_state.single_audio_path, format="audio/mp3")
+                with open(st.session_state.single_audio_path, "rb") as f_single:
+                    st.download_button(
+                        label="⬇️ Baixar Audiobook Completo (.MP3)",
+                        data=f_single,
+                        file_name=os.path.basename(st.session_state.single_audio_path),
+                        mime="audio/mp3",
+                        type="primary",
+                        key="dl_single_audiobook",
+                    )
+                st.markdown("---")
+
+            st.markdown("### 📑 Capítulos Separados")
             # Botão de download do ZIP completo
             if "zip_path" in st.session_state and os.path.exists(
                 st.session_state.zip_path
             ):
                 with open(st.session_state.zip_path, "rb") as f:
                     st.download_button(
-                        label="📦 Baixar Todos os Capítulos (Arquivo .ZIP)",
+                        label="📦 Baixar Todos os Capítulos Separados (Arquivo .ZIP)",
                         data=f,
                         file_name=os.path.basename(st.session_state.zip_path),
                         mime="application/zip",
-                        type="primary",
+                        key="dl_all_zip",
                     )
 
             # Players individuais para ouvir no navegador
