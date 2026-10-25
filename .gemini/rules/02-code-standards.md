@@ -16,7 +16,7 @@
 - SEMPRE criar e utilizar exceções de domínio específicas em vez de capturar `Exception` genérica [DIRETRIZ aprovada pelo usuário]:
   - `ExtractionError`: para falhas na leitura ou decodificação de PDF/EPUB.
   - `TTSGenerationError`: para erros de conexão ou síntese com o edge-tts.
-  - `AudioProcessingError`: para falhas ao gravar tags ID3 ou criar arquivo ZIP.
+  - `AudioProcessingError`: para falhas ao gravar tags ID3, criar arquivo ZIP ou compilar áudio unificado.
 - NUNCA silenciar erros com blocos `except: pass` vazios [DIRETRIZ].
 - SEMPRE informar ao usuário na UI via `st.error()` ou `st.warning()` quando uma exceção ocorrer [app.py].
 

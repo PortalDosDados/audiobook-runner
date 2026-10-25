@@ -4,8 +4,8 @@
 - `/app.py`: Camada de apresentação e orquestração de UI com Streamlit [app.py].
 - `/src/extractors/`: Camada de extração e limpeza de textos (`pdf_extractor.py`, `epub_extractor.py`) [src/extractors/].
 - `/src/tts/`: Camada de síntese de fala e abstração do provedor TTS (`edge_tts_engine.py`) [src/tts/].
-- `/src/audio/`: Camada de gerenciamento de arquivos de áudio, tags ID3 e empacotamento ZIP (`audio_manager.py`) [src/audio/].
-- `/output/`: Armazenamento de arquivos de áudio gerados e pacotes `.zip` [app.py], [.gitignore].
+- `/src/audio/`: Camada de gerenciamento de arquivos de áudio, tags ID3, compilação unificada de capítulos e empacotamento ZIP (`audio_manager.py`) [src/audio/].
+- `/output/`: Armazenamento de arquivos de áudio gerados, faixas compiladas (`_completo.mp3`) e pacotes `.zip` [app.py], [.gitignore].
 
 ## Responsabilidades e Acoplamento
 - **Camada de Apresentação (`app.py`)**:
